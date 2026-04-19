@@ -25,14 +25,15 @@ class HomeController extends Controller
 
         $sections = HomepageSection::active();
 
-        // Load plans for the pricing section (eager, cached separately)
-        $plans = \Illuminate\Support\Facades\Cache::remember('homepage_plans', 3600, function () {
+        // Load plans for the pricing section (cached as raw DB attributes)
+        $rawPlans = \Illuminate\Support\Facades\Cache::remember('homepage_plans', 3600, function () {
             return Plan::where('is_active', true)
                 ->orderBy('price')
                 ->get()
-                ->toArray();          // store plain arrays — never raw model objects
+                ->map(fn($m) => $m->getAttributes())
+                ->all();
         });
-        $plans = Plan::hydrate($plans);
+        $plans = Plan::hydrate($rawPlans);
 
         return view('welcome', compact('sections', 'plans'));
     }
