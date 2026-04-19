@@ -16,8 +16,11 @@ class RechargeRequestSeeder extends Seeder
         $omar  = User::where('phone', '0599333333')->first();
         $mona  = User::where('phone', '0599444444')->first();
 
+        $tenantId = app(\App\Services\TenantContext::class)->id();
+
         RechargeRequest::insert([
             [
+                'tenant_id'     => $tenantId,
                 'user_id'       => $ahmed->id,
                 'amount'        => 100.00,
                 'note'          => 'شحن عبر التحويل البنكي',
@@ -28,6 +31,7 @@ class RechargeRequestSeeder extends Seeder
                 'updated_at'    => now(),
             ],
             [
+                'tenant_id'     => $tenantId,
                 'user_id'       => $sara->id,
                 'amount'        => 50.00,
                 'note'          => '',
@@ -38,6 +42,7 @@ class RechargeRequestSeeder extends Seeder
                 'updated_at'    => now(),
             ],
             [
+                'tenant_id'     => $tenantId,
                 'user_id'       => $omar->id,
                 'amount'        => 200.00,
                 'note'          => 'شحن عاجل',
@@ -48,6 +53,7 @@ class RechargeRequestSeeder extends Seeder
                 'updated_at'    => now(),
             ],
             [
+                'tenant_id'     => $tenantId,
                 'user_id'       => $mona->id,
                 'amount'        => 30.00,
                 'note'          => '',

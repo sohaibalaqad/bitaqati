@@ -10,7 +10,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // ── Network Admin ──────────────────────────────────────────────────
+        $tenantId = app(\App\Services\TenantContext::class)->id();
+
+        // ── Network Admin — ::create() auto-assigns tenant_id via creating hook ──
         User::create([
             'name'     => 'صهيب العقاد',
             'phone'    => '0599000000',
@@ -21,9 +23,10 @@ class UserSeeder extends Seeder
             'status'   => 'active',
         ]);
 
-        // ── Clients ────────────────────────────────────────────────────────
+        // ── Clients — ::insert() bypasses Eloquent, so tenant_id must be explicit ──
         User::insert([
             [
+                'tenant_id'  => $tenantId,
                 'name'       => 'أحمد محمد',
                 'phone'      => '0599111111',
                 'email'      => 'ahmed@example.com',
@@ -35,6 +38,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'tenant_id'  => $tenantId,
                 'name'       => 'سارة علي',
                 'phone'      => '0599222222',
                 'email'      => 'sara@example.com',
@@ -46,6 +50,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'tenant_id'  => $tenantId,
                 'name'       => 'عمر خالد',
                 'phone'      => '0599333333',
                 'email'      => 'omar@example.com',
@@ -57,6 +62,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'tenant_id'  => $tenantId,
                 'name'       => 'منى حسن',
                 'phone'      => '0599444444',
                 'email'      => 'mona@example.com',

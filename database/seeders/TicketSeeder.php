@@ -14,8 +14,11 @@ class TicketSeeder extends Seeder
         $sara  = User::where('phone', '0599222222')->first();
         $omar  = User::where('phone', '0599333333')->first();
 
+        $tenantId = app(\App\Services\TenantContext::class)->id();
+
         Ticket::insert([
             [
+                'tenant_id'   => $tenantId,
                 'user_id'     => $ahmed->id,
                 'title'       => 'البطاقة لا تعمل',
                 'description' => 'اشتريت بطاقة ولم تعمل معي',
@@ -25,6 +28,7 @@ class TicketSeeder extends Seeder
                 'updated_at'  => now(),
             ],
             [
+                'tenant_id'   => $tenantId,
                 'user_id'     => $sara->id,
                 'title'       => 'استفسار عن الباقات',
                 'description' => 'أريد معرفة الفرق بين الباقات',
@@ -34,6 +38,7 @@ class TicketSeeder extends Seeder
                 'updated_at'  => now(),
             ],
             [
+                'tenant_id'   => $tenantId,
                 'user_id'     => $omar->id,
                 'title'       => 'مشكلة في الرصيد',
                 'description' => 'الرصيد لم يتم إضافته بعد الشحن',
