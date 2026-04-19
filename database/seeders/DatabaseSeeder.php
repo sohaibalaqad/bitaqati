@@ -23,6 +23,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Resolve the default tenant and load it into TenantContext.
+        // This makes the BelongsToTenant creating-hook auto-assign tenant_id
+        // on every ::create() call in the seeders below.
+        // ::insert() calls bypass Eloquent events, so each seeder adds
+        // tenant_id to those rows explicitly via app(TenantContext::class)->id().
+        $subdomain = env('DEFAULT_TENANT_SUBDOMAIN', 'default');
+        $tenant    = \App\Models\Tenant::withoutTenantScope()
+                         ->where('subdomain', $subdomain)
+                         ->first();
+
+        if (! $tenant) {
+            $this->command->error("Default tenant '{$subdomain}' not found. Run migrations first (php artisan migrate).");
+            return;
+        }
+
+        app(\App\Services\TenantContext::class)->set($tenant);
+
         $this->call([
             SuperAdminSeeder::class,
             UserSeeder::class,

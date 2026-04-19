@@ -25,11 +25,13 @@ class InvoiceSeeder extends Seeder
         $soldCard2 = Card::where('username', '789012345678')->first();
         $soldCard3 = Card::where('username', '456789012345')->first();
 
+        $tenantId = app(\App\Services\TenantContext::class)->id();
+
         Invoice::insert([
-            ['user_id' => $ahmed->id, 'package_id' => $pkg2->id, 'card_id' => $soldCard1->id, 'amount' => 20.00,  'status' => 'paid',    'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => $sara->id,  'package_id' => $pkg3->id, 'card_id' => $soldCard2->id, 'amount' => 60.00,  'status' => 'paid',    'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => $omar->id,  'package_id' => $pkg1->id, 'card_id' => $soldCard3->id, 'amount' => 5.00,   'status' => 'paid',    'created_at' => now(), 'updated_at' => now()],
-            ['user_id' => $ahmed->id, 'package_id' => $pkg4->id, 'card_id' => null,           'amount' => 100.00, 'status' => 'pending', 'created_at' => now(), 'updated_at' => now()],
+            ['tenant_id' => $tenantId, 'user_id' => $ahmed->id, 'package_id' => $pkg2->id, 'card_id' => $soldCard1->id, 'amount' => 20.00,  'status' => 'paid',    'created_at' => now(), 'updated_at' => now()],
+            ['tenant_id' => $tenantId, 'user_id' => $sara->id,  'package_id' => $pkg3->id, 'card_id' => $soldCard2->id, 'amount' => 60.00,  'status' => 'paid',    'created_at' => now(), 'updated_at' => now()],
+            ['tenant_id' => $tenantId, 'user_id' => $omar->id,  'package_id' => $pkg1->id, 'card_id' => $soldCard3->id, 'amount' => 5.00,   'status' => 'paid',    'created_at' => now(), 'updated_at' => now()],
+            ['tenant_id' => $tenantId, 'user_id' => $ahmed->id, 'package_id' => $pkg4->id, 'card_id' => null,           'amount' => 100.00, 'status' => 'pending', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 }

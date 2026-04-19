@@ -14,14 +14,16 @@ class TransactionSeeder extends Seeder
         $sara  = User::where('phone', '0599222222')->first();
         $omar  = User::where('phone', '0599333333')->first();
 
+        $tenantId = app(\App\Services\TenantContext::class)->id();
+
         $rows = [
-            ['user_id' => $ahmed->id, 'type' => 'deposit',  'amount' => 200.00, 'note' => 'شحن رصيد'],
-            ['user_id' => $ahmed->id, 'type' => 'purchase', 'amount' => 20.00,  'note' => 'شراء بطاقة - أسبوعي 4 ميجا'],
-            ['user_id' => $sara->id,  'type' => 'deposit',  'amount' => 150.00, 'note' => 'شحن رصيد'],
-            ['user_id' => $sara->id,  'type' => 'purchase', 'amount' => 60.00,  'note' => 'شراء بطاقة - شهري 8 ميجا'],
-            ['user_id' => $omar->id,  'type' => 'deposit',  'amount' => 250.00, 'note' => 'شحن رصيد'],
-            ['user_id' => $omar->id,  'type' => 'purchase', 'amount' => 5.00,   'note' => 'شراء بطاقة - يومي 2 ميجا'],
-            ['user_id' => $omar->id,  'type' => 'withdraw', 'amount' => 45.00,  'note' => 'سحب رصيد'],
+            ['tenant_id' => $tenantId, 'user_id' => $ahmed->id, 'type' => 'deposit',  'amount' => 200.00, 'note' => 'شحن رصيد'],
+            ['tenant_id' => $tenantId, 'user_id' => $ahmed->id, 'type' => 'purchase', 'amount' => 20.00,  'note' => 'شراء بطاقة - أسبوعي 4 ميجا'],
+            ['tenant_id' => $tenantId, 'user_id' => $sara->id,  'type' => 'deposit',  'amount' => 150.00, 'note' => 'شحن رصيد'],
+            ['tenant_id' => $tenantId, 'user_id' => $sara->id,  'type' => 'purchase', 'amount' => 60.00,  'note' => 'شراء بطاقة - شهري 8 ميجا'],
+            ['tenant_id' => $tenantId, 'user_id' => $omar->id,  'type' => 'deposit',  'amount' => 250.00, 'note' => 'شحن رصيد'],
+            ['tenant_id' => $tenantId, 'user_id' => $omar->id,  'type' => 'purchase', 'amount' => 5.00,   'note' => 'شراء بطاقة - يومي 2 ميجا'],
+            ['tenant_id' => $tenantId, 'user_id' => $omar->id,  'type' => 'withdraw', 'amount' => 45.00,  'note' => 'سحب رصيد'],
         ];
 
         foreach ($rows as &$row) {
