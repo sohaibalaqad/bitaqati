@@ -29,9 +29,7 @@ class DatabaseSeeder extends Seeder
         // ::insert() calls bypass Eloquent events, so each seeder adds
         // tenant_id to those rows explicitly via app(TenantContext::class)->id().
         $subdomain = env('DEFAULT_TENANT_SUBDOMAIN', 'default');
-        $tenant    = \App\Models\Tenant::withoutTenantScope()
-                         ->where('subdomain', $subdomain)
-                         ->first();
+        $tenant    = \App\Models\Tenant::where('subdomain', $subdomain)->first();
 
         if (! $tenant) {
             $this->command->error("Default tenant '{$subdomain}' not found. Run migrations first (php artisan migrate).");
