@@ -192,7 +192,7 @@ Route::middleware('tenant')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('client')->group(function () {
-        Route::get('/', [ClientDashboardController::class, 'index'])->name('client.dashboard');
+        Route::get('/dashboard', [ClientDashboardController::class, 'index'])->name('client.dashboard');
 
         // AJAX API endpoints
         Route::post('/buy',                   [ClientDashboardController::class, 'buyCard'])->name('client.buy')->middleware('throttle:10,1');
