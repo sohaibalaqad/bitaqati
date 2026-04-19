@@ -20,15 +20,17 @@ class HomepageSection extends Model
     /** All active sections ordered for the public page. */
     public static function active(): \Illuminate\Database\Eloquent\Collection
     {
-        $rows = Cache::remember('homepage_sections', 3600, function () {
+        $raw = Cache::remember('homepage_sections', 3600, function () {
+            // getAttributes() returns raw DB values (JSON strings, not PHP arrays)
+            // so hydrate() can re-apply casts correctly on every read.
             return static::where('is_active', true)
                 ->orderBy('sort_order')
                 ->get()
-                ->toArray();          // store plain arrays — never raw model objects
+                ->map(fn($m) => $m->getAttributes())
+                ->all();
         });
 
-        // Re-hydrate into model instances so views get the same interface
-        return static::hydrate($rows);
+        return static::hydrate($raw);
     }
 
     /** Clear the homepage cache (call after any admin update). */
