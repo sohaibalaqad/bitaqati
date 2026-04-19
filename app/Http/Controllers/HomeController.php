@@ -29,8 +29,10 @@ class HomeController extends Controller
         $plans = \Illuminate\Support\Facades\Cache::remember('homepage_plans', 3600, function () {
             return Plan::where('is_active', true)
                 ->orderBy('price')
-                ->get();
+                ->get()
+                ->toArray();          // store plain arrays — never raw model objects
         });
+        $plans = Plan::hydrate($plans);
 
         return view('welcome', compact('sections', 'plans'));
     }

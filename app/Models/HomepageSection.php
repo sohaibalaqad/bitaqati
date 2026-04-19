@@ -20,11 +20,15 @@ class HomepageSection extends Model
     /** All active sections ordered for the public page. */
     public static function active(): \Illuminate\Database\Eloquent\Collection
     {
-        return Cache::remember('homepage_sections', 3600, function () {
+        $rows = Cache::remember('homepage_sections', 3600, function () {
             return static::where('is_active', true)
                 ->orderBy('sort_order')
-                ->get();
+                ->get()
+                ->toArray();          // store plain arrays — never raw model objects
         });
+
+        // Re-hydrate into model instances so views get the same interface
+        return static::hydrate($rows);
     }
 
     /** Clear the homepage cache (call after any admin update). */
