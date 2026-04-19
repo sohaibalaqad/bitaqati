@@ -225,13 +225,12 @@ Route::middleware('tenant')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Public Homepage — inside tenant middleware so ResolveTenant runs.
-| On the main domain the middleware passes through (no subdomain).
-| On an unknown subdomain it aborts 404 (branded error page shown).
+| Public Homepage — outside tenant middleware.
+| HomeController handles subdomain validation internally.
 | HomeController redirects authenticated users to their dashboard.
 |--------------------------------------------------------------------------
 */
-Route::middleware('tenant')->get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 /*
 |--------------------------------------------------------------------------

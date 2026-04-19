@@ -9,6 +9,16 @@ class HomeController extends Controller
 {
     public function index()
     {
+        // On a subdomain that doesn't match any active tenant → branded 404
+        $appDomain = config('app.domain', '');
+        $host      = request()->getHost();
+        if ($appDomain && $host !== $appDomain && str_ends_with($host, '.' . $appDomain)) {
+            $subdomain = str_replace('.' . $appDomain, '', $host);
+            if (! \App\Models\Tenant::where('subdomain', $subdomain)->where('status', 'active')->exists()) {
+                abort(404);
+            }
+        }
+
         // Redirect authenticated users to their appropriate dashboard
         if (auth()->check()) {
             $user = auth()->user();
