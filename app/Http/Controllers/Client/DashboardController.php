@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
-use App\Models\Package;
 use App\Models\Card;
 use App\Models\Invoice;
-use App\Models\Transaction;
-use App\Models\RechargeRequest;
 use App\Models\Notification;
+use App\Models\Package;
+use App\Models\RechargeRequest;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
@@ -20,13 +22,13 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        $packages = Package::withCount(['cards as available_count' => fn($q) => $q->where('status', 'available')])->get();
-        $myCards = $user->cards()->with('package')->latest('sold_at')->get();
-        $transactions = $user->transactions()->latest()->get();
-        $myRecharges = $user->rechargeRequests()->latest()->get();
+        $packages        = Package::withCount(['cards as available_count' => fn($q) => $q->where('status', 'available')])->get();
+        $myCards         = $user->cards()->with('package')->latest('sold_at')->get();
+        $transactions    = $user->transactions()->latest()->get();
+        $myRecharges     = $user->rechargeRequests()->latest()->get();
 
-        $myCardsCount = $myCards->count();
-        $myTransCount = $transactions->count();
+        $myCardsCount    = $myCards->count();
+        $myTransCount    = $transactions->count();
         $myRechargeCount = $myRecharges->count();
 
         return view('client.dashboard', compact(
@@ -39,24 +41,30 @@ class DashboardController extends Controller
     {
         $request->validate(['package_id' => 'required|integer|exists:packages,id']);
 
-        $user    = auth()->user();
         $package = Package::findOrFail($request->package_id);
 
-        // Atomic check: re-fetch balance from DB to prevent race conditions
-        $user->refresh();
-
-        $card = Card::available()->where('package_id', $package->id)->lockForUpdate()->first();
-
-        if (!$card) {
-            return response()->json(['success' => false, 'message' => 'لا توجد بطاقات متاحة لهذه الباقة']);
-        }
-
-        if ($user->balance < $package->price) {
-            return response()->json(['success' => false, 'message' => 'رصيدك غير كافٍ، قم بشحن رصيدك أولاً']);
-        }
-
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
+
+            // Lock the user row FIRST — prevents two concurrent requests from
+            // both reading a sufficient balance and both successfully decrementing it
+            $user = User::lockForUpdate()->findOrFail(auth()->id());
+
+            if ($user->balance < $package->price) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'رصيدك غير كافٍ، قم بشحن رصيدك أولاً']);
+            }
+
+            // Lock the card row — prevents the same card from being sold twice
+            $card = Card::available()
+                ->where('package_id', $package->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $card) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'لا توجد بطاقات متاحة لهذه الباقة']);
+            }
 
             $user->decrement('balance', $package->price);
 
@@ -81,25 +89,32 @@ class DashboardController extends Controller
                 'status'     => 'paid',
             ]);
 
-            \DB::commit();
-        } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error('buyCard failed: ' . $e->getMessage());
+            DB::commit();
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('buyCard failed', [
+                'user_id'    => auth()->id(),
+                'package_id' => $package->id,
+                'error'      => $e->getMessage(),
+            ]);
             return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء العملية، حاول مجدداً']);
         }
 
-        // Notify user
-        \App\Models\Notification::send(
+        // ── Notifications (outside transaction — failure here is non-critical) ──
+        Notification::send(
             $user->id, 'purchase',
             'تم شراء بطاقة بنجاح',
             'تم خصم ' . number_format($package->price, 2) . '₪ من رصيدك لشراء باقة ' . $package->name,
             '/'
         );
 
-        // Notify admin
-        $admin = \App\Models\User::where('role', 'admin')->first();
+        $admin = User::where('role', 'network_admin')
+            ->where('tenant_id', $user->tenant_id)
+            ->first();
+
         if ($admin) {
-            \App\Models\Notification::send(
+            Notification::send(
                 $admin->id, 'purchase',
                 'عملية شراء جديدة',
                 $user->name . ' اشترى بطاقة من باقة ' . $package->name,
@@ -107,7 +122,6 @@ class DashboardController extends Controller
             );
         }
 
-        // ✅ Return balance as float to avoid JS .toFixed() on string
         return response()->json([
             'success'     => true,
             'new_balance' => (float) $user->fresh()->balance,
@@ -125,23 +139,26 @@ class DashboardController extends Controller
 
         RechargeRequest::create([
             'user_id' => auth()->id(),
-            'amount' => $request->amount,
-            'note' => $request->note,
-            'status' => 'pending',
+            'amount'  => $request->amount,
+            'note'    => $request->note,
+            'status'  => 'pending',
         ]);
 
-        // Notify all admins of the new recharge request
+        // Notify all network_admin users belonging to this tenant
         $clientName = auth()->user()->name;
-        $admins = User::where('role', 'admin')->pluck('id');
-        foreach ($admins as $adminId) {
-            Notification::send(
-                $adminId,
-                'recharge',
-                'طلب شحن رصيد جديد',
-                "{$clientName} طلب شحن " . number_format($request->amount, 2) . " شيقل",
-                route('admin.shipping')
-            );
-        }
+        $tenantId   = auth()->user()->tenant_id;
+
+        User::where('role', 'network_admin')
+            ->where('tenant_id', $tenantId)
+            ->pluck('id')
+            ->each(function ($adminId) use ($clientName, $request) {
+                Notification::send(
+                    $adminId, 'recharge',
+                    'طلب شحن رصيد جديد',
+                    "{$clientName} طلب شحن " . number_format($request->amount, 2) . ' شيقل',
+                    route('admin.shipping')
+                );
+            });
 
         return response()->json(['success' => true]);
     }
@@ -149,20 +166,20 @@ class DashboardController extends Controller
     public function trackCardUsage(Request $request)
     {
         $request->validate(['card_id' => 'required|integer']);
+
         $user = auth()->user();
-        $card = \App\Models\Card::where('id', $request->card_id)
+        $card = Card::where('id', $request->card_id)
             ->where('sold_to', $user->id)
             ->first();
 
-        if (!$card) {
+        if (! $card) {
             return response()->json(['success' => false, 'message' => 'البطاقة غير موجودة']);
         }
 
-        if (!$card->is_used) {
+        if (! $card->is_used) {
             $card->update(['is_used' => true, 'first_used_at' => now()]);
         }
 
-        // Get MikroTik URL from settings
         $mikrotikUrl = \App\Models\Setting::get('mikrotik_url', '');
 
         return response()->json([
@@ -179,12 +196,15 @@ class DashboardController extends Controller
         $user = auth()->user();
 
         $validator = Validator::make($request->all(), [
-            'name'  => 'required|string|max:255',
-            'phone' => "required|string|unique:users,phone,{$user->id}",
+            'name'         => 'required|string|max:255',
+            'phone'        => "required|string|unique:users,phone,{$user->id}",
+            'new_password' => 'nullable|min:8|confirmed',
         ], [
-            'name.required'  => 'الاسم مطلوب',
-            'phone.required' => 'رقم الهاتف مطلوب',
-            'phone.unique'   => 'رقم الهاتف مستخدم من قِبَل مستخدم آخر',
+            'name.required'          => 'الاسم مطلوب',
+            'phone.required'         => 'رقم الهاتف مطلوب',
+            'phone.unique'           => 'رقم الهاتف مستخدم من قِبَل مستخدم آخر',
+            'new_password.min'       => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+            'new_password.confirmed' => 'تأكيد كلمة المرور غير متطابق',
         ]);
 
         if ($validator->fails()) {
@@ -201,7 +221,7 @@ class DashboardController extends Controller
         ]);
 
         if ($request->filled('new_password')) {
-            if (!$request->filled('current_password') || !Hash::check($request->current_password, $user->password)) {
+            if (! $request->filled('current_password') || ! Hash::check($request->current_password, $user->password)) {
                 return response()->json(['success' => false, 'message' => 'كلمة المرور الحالية غير صحيحة']);
             }
             $user->update(['password' => Hash::make($request->new_password)]);

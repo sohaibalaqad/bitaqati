@@ -13,8 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\IsAdmin::class,
-            'client' => \App\Http\Middleware\IsClient::class,
+            'tenant'        => \App\Http\Middleware\ResolveTenant::class,
+            'super_admin'   => \App\Http\Middleware\IsSuperAdmin::class,
+            'network_admin' => \App\Http\Middleware\IsNetworkAdmin::class,
+            'admin'         => \App\Http\Middleware\IsNetworkAdmin::class, // backward-compat
+            'client'        => \App\Http\Middleware\IsClient::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

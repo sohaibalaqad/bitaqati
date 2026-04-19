@@ -10,7 +10,7 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        if (Auth::check() && Auth::user()->isAdmin()) {
+        if (Auth::check() && Auth::user()->isNetworkAdmin()) {
             return redirect()->route('admin.dashboard');
         }
         return view('admin.login');
@@ -19,16 +19,26 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
         ]);
 
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password, 'role' => 'admin'], $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended(route('admin.dashboard'));
+        // Attempt without a role filter — role is validated after
+        if (! Auth::attempt(
+            ['email' => $request->email, 'password' => $request->password],
+            $request->boolean('remember')
+        )) {
+            return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة'])->onlyInput('email');
         }
 
-        return back()->withErrors(['email' => 'بيانات الدخول غير صحيحة'])->onlyInput('email');
+        // Block clients and super_admin from entering the network-admin panel
+        if (! Auth::user()->isNetworkAdmin()) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'ليس لديك صلاحية الوصول لهذه اللوحة'])->onlyInput('email');
+        }
+
+        $request->session()->regenerate();
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     public function logout(Request $request)

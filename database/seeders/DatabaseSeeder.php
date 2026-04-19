@@ -2,143 +2,116 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Package;
-use App\Models\Card;
-use App\Models\Invoice;
-use App\Models\Transaction;
-use App\Models\RechargeRequest;
-use App\Models\Ticket;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Seed the application's database.
+     *
+     * Order matters — each seeder may depend on records created by the previous one.
+     *
+     * 0. SuperAdmin       — platform owner (no tenant), reads from .env
+     * 1. Users            — network_admin + clients
+     * 2. Packages         — internet packages (no dependencies)
+     * 3. Cards            — available inventory + sold cards (needs users + packages)
+     * 4. Invoices         — purchase records       (needs users + packages + cards)
+     * 5. Transactions     — balance history         (needs users)
+     * 6. RechargeRequests — top-up requests         (needs users)
+     * 7. Tickets          — support tickets         (needs users)
+     */
     public function run(): void
     {
-        // ===== Admin =====
-        $admin = User::create([
-            'name' => 'صهيب العقاد',
-            'phone' => '0599000000',
-            'email' => 'sohaib@xnet-wifi.store',
-            'password' => Hash::make('admin'),
-            'role' => 'admin',
-            'balance' => 0,
-            'status' => 'active',
+        $this->call([
+            SuperAdminSeeder::class,
+            UserSeeder::class,
+            PackageSeeder::class,
+            CardSeeder::class,
+            InvoiceSeeder::class,
+            TransactionSeeder::class,
+            RechargeRequestSeeder::class,
+            TicketSeeder::class,
         ]);
 
-//        // ===== Clients =====
-//        $ahmed = User::create([
-//            'name' => 'أحمد محمد',
-//            'phone' => '0599111111',
-//            'email' => 'ahmed@example.com',
-//            'password' => Hash::make('123456'),
-//            'role' => 'client',
-//            'balance' => 150.00,
-//            'status' => 'active',
-//        ]);
-//
-//        $sara = User::create([
-//            'name' => 'سارة علي',
-//            'phone' => '0599222222',
-//            'email' => 'sara@example.com',
-//            'password' => Hash::make('123456'),
-//            'role' => 'client',
-//            'balance' => 85.50,
-//            'status' => 'active',
-//        ]);
-//
-//        $omar = User::create([
-//            'name' => 'عمر خالد',
-//            'phone' => '0599333333',
-//            'email' => 'omar@example.com',
-//            'password' => Hash::make('123456'),
-//            'role' => 'client',
-//            'balance' => 200.00,
-//            'status' => 'active',
-//        ]);
-//
-//        $mona = User::create([
-//            'name' => 'منى حسن',
-//            'phone' => '0599444444',
-//            'email' => 'mona@example.com',
-//            'password' => Hash::make('123456'),
-//            'role' => 'client',
-//            'balance' => 0,
-//            'status' => 'inactive',
-//        ]);
-//
-//        // ===== Packages =====
-//        $pkg1 = Package::create(['name' => 'يومي 2 ميجا', 'speed' => '2 ميجا', 'duration' => '24 ساعة', 'price' => 5.00, 'cost' => 3.00]);
-//        $pkg2 = Package::create(['name' => 'أسبوعي 4 ميجا', 'speed' => '4 ميجا', 'duration' => '7 أيام', 'price' => 20.00, 'cost' => 12.00]);
-//        $pkg3 = Package::create(['name' => 'شهري 8 ميجا', 'speed' => '8 ميجا', 'duration' => '30 يوم', 'price' => 60.00, 'cost' => 40.00]);
-//        $pkg4 = Package::create(['name' => 'شهري 16 ميجا', 'speed' => '16 ميجا', 'duration' => '30 يوم', 'price' => 100.00, 'cost' => 70.00]);
-//
-//        // ===== Cards (Available) =====
-//        $packages = [$pkg1, $pkg2, $pkg3, $pkg4];
-//        foreach ($packages as $pkg) {
-//            for ($i = 1; $i <= 5; $i++) {
-//                Card::create([
-//                    'username' => rand(100000000, 999999999),
-//                    'password' => rand(100000, 999999),
-//                    'package_id' => $pkg->id,
-//                    'status' => 'available',
-//                ]);
-//            }
-//        }
-//
-//        // ===== Sold Cards =====
-//        $soldCard1 = Card::create([
-//            'username' => '340433433526',
-//            'password' => '564354',
-//            'package_id' => $pkg2->id,
-//            'status' => 'sold',
-//            'sold_to' => $ahmed->id,
-//            'sold_at' => now()->subDays(2),
-//        ]);
-//
-//        $soldCard2 = Card::create([
-//            'username' => '789012345678',
-//            'password' => '112233',
-//            'package_id' => $pkg3->id,
-//            'status' => 'sold',
-//            'sold_to' => $sara->id,
-//            'sold_at' => now()->subDay(),
-//        ]);
-//
-//        $soldCard3 = Card::create([
-//            'username' => '456789012345',
-//            'password' => '998877',
-//            'package_id' => $pkg1->id,
-//            'status' => 'sold',
-//            'sold_to' => $omar->id,
-//            'sold_at' => now(),
-//        ]);
-//
-//        // ===== Invoices =====
-//        Invoice::create(['user_id' => $ahmed->id, 'package_id' => $pkg2->id, 'card_id' => $soldCard1->id, 'amount' => 20.00, 'status' => 'paid']);
-//        Invoice::create(['user_id' => $sara->id, 'package_id' => $pkg3->id, 'card_id' => $soldCard2->id, 'amount' => 60.00, 'status' => 'paid']);
-//        Invoice::create(['user_id' => $omar->id, 'package_id' => $pkg1->id, 'card_id' => $soldCard3->id, 'amount' => 5.00, 'status' => 'paid']);
-//        Invoice::create(['user_id' => $ahmed->id, 'package_id' => $pkg4->id, 'card_id' => null, 'amount' => 100.00, 'status' => 'pending']);
-//
-//        // ===== Transactions =====
-//        Transaction::create(['user_id' => $ahmed->id, 'type' => 'deposit', 'amount' => 200.00, 'note' => 'شحن رصيد']);
-//        Transaction::create(['user_id' => $ahmed->id, 'type' => 'purchase', 'amount' => 20.00, 'note' => 'شراء بطاقة - أسبوعي 4 ميجا']);
-//        Transaction::create(['user_id' => $sara->id, 'type' => 'deposit', 'amount' => 150.00, 'note' => 'شحن رصيد']);
-//        Transaction::create(['user_id' => $sara->id, 'type' => 'purchase', 'amount' => 60.00, 'note' => 'شراء بطاقة - شهري 8 ميجا']);
-//        Transaction::create(['user_id' => $omar->id, 'type' => 'deposit', 'amount' => 250.00, 'note' => 'شحن رصيد']);
-//        Transaction::create(['user_id' => $omar->id, 'type' => 'purchase', 'amount' => 5.00, 'note' => 'شراء بطاقة - يومي 2 ميجا']);
-//        Transaction::create(['user_id' => $omar->id, 'type' => 'withdraw', 'amount' => 45.00, 'note' => 'سحب رصيد']);
-//
-//        // ===== Recharge Requests =====
-//        RechargeRequest::create(['user_id' => $ahmed->id, 'amount' => 100.00, 'note' => 'شحن عبر التحويل البنكي', 'status' => 'approved', 'handled_by' => $admin->id]);
-//        RechargeRequest::create(['user_id' => $sara->id, 'amount' => 50.00, 'note' => '', 'status' => 'pending']);
-//        RechargeRequest::create(['user_id' => $omar->id, 'amount' => 200.00, 'note' => 'شحن عاجل', 'status' => 'pending']);
-//        RechargeRequest::create(['user_id' => $mona->id, 'amount' => 30.00, 'note' => '', 'status' => 'rejected', 'reject_reason' => 'لم يتم التحويل', 'handled_by' => $admin->id]);
-//
-//        // ===== Tickets =====
-//        Ticket::create(['user_id' => $ahmed->id, 'title' => 'البطاقة لا تعمل', 'description' => 'اشتريت بطاقة ولم تعمل معي', 'priority' => 'high', 'status' => 'open']);
-//        Ticket::create(['user_id' => $sara->id, 'title' => 'استفسار عن الباقات', 'description' => 'أريد معرفة الفرق بين الباقات', 'priority' => 'low', 'status' => 'resolved']);
-//        Ticket::create(['user_id' => $omar->id, 'title' => 'مشكلة في الرصيد', 'description' => 'الرصيد لم يتم إضافته بعد الشحن', 'priority' => 'medium', 'status' => 'in-progress']);
+        $this->printCredentials();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    private function printCredentials(): void
+    {
+        $line  = str_repeat('─', 62);
+        $dline = str_repeat('═', 62);
+
+        $this->command->newLine();
+        $this->command->line("  <fg=cyan;options=bold>╔{$dline}╗</>");
+        $this->command->line("  <fg=cyan;options=bold>║" . $this->center('🔐  بيانات الدخول', 62) . "║</>");
+        $this->command->line("  <fg=cyan;options=bold>╚{$dline}╝</>");
+        $this->command->newLine();
+
+        // ── Super Admin ──────────────────────────────────────────────────
+        $superEmail    = env('SUPER_ADMIN_EMAIL',    'superadmin@platform.com');
+        $superPassword = env('SUPER_ADMIN_PASSWORD', 'changeme123');
+        $superName     = env('SUPER_ADMIN_NAME',     'Super Admin');
+
+        $this->command->line("  <fg=yellow;options=bold>┌{$line}┐</>");
+        $this->command->line("  <fg=yellow;options=bold>│</> <fg=yellow;options=bold>" . $this->pad('👑  Super Admin  (مدير المنصة)', 60) . "</><fg=yellow;options=bold>│</>");
+        $this->command->line("  <fg=yellow;options=bold>├{$line}┤</>");
+        $this->command->line("  <fg=yellow>│</>  الاسم      : <options=bold>{$superName}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($superName))) . "<fg=yellow>│</>");
+        $this->command->line("  <fg=yellow>│</>  البريد     : <options=bold>{$superEmail}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($superEmail))) . "<fg=yellow>│</>");
+        $this->command->line("  <fg=yellow>│</>  كلمة المرور: <options=bold>{$superPassword}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($superPassword))) . "<fg=yellow>│</>");
+        $this->command->line("  <fg=yellow>│</>  الرابط     : <options=bold>/superadmin/login</>  " . str_repeat(' ', 25) . "<fg=yellow>│</>");
+        $this->command->line("  <fg=yellow;options=bold>└{$line}┘</>");
+        $this->command->newLine();
+
+        // ── Network Admin ────────────────────────────────────────────────
+        $admin = DB::table('users')->where('role', 'network_admin')->first();
+
+        $this->command->line("  <fg=green;options=bold>┌{$line}┐</>");
+        $this->command->line("  <fg=green;options=bold>│</> <fg=green;options=bold>" . $this->pad('🛠️   مدير الشبكة  (Network Admin)', 60) . "</><fg=green;options=bold>│</>");
+        $this->command->line("  <fg=green;options=bold>├{$line}┤</>");
+        if ($admin) {
+            $this->command->line("  <fg=green>│</>  الاسم      : <options=bold>{$admin->name}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($admin->name))) . "<fg=green>│</>");
+            $this->command->line("  <fg=green>│</>  البريد     : <options=bold>{$admin->email}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($admin->email))) . "<fg=green>│</>");
+            $this->command->line("  <fg=green>│</>  كلمة المرور: <options=bold>admin</>  " . str_repeat(' ', 36) . "<fg=green>│</>");
+            $this->command->line("  <fg=green>│</>  الرابط     : <options=bold>/admin/login</>  " . str_repeat(' ', 30) . "<fg=green>│</>");
+        }
+        $this->command->line("  <fg=green;options=bold>└{$line}┘</>");
+        $this->command->newLine();
+
+        // ── Sample Client ────────────────────────────────────────────────
+        $client = DB::table('users')->where('role', 'client')->where('status', 'active')->first();
+
+        $this->command->line("  <fg=blue;options=bold>┌{$line}┐</>");
+        $this->command->line("  <fg=blue;options=bold>│</> <fg=blue;options=bold>" . $this->pad('👤  عميل تجريبي  (Client)', 60) . "</><fg=blue;options=bold>│</>");
+        $this->command->line("  <fg=blue;options=bold>├{$line}┤</>");
+        if ($client) {
+            $this->command->line("  <fg=blue>│</>  الاسم      : <options=bold>{$client->name}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($client->name))) . "<fg=blue>│</>");
+            $this->command->line("  <fg=blue>│</>  البريد     : <options=bold>{$client->email}</>  " . str_repeat(' ', max(0, 43 - mb_strlen($client->email))) . "<fg=blue>│</>");
+            $this->command->line("  <fg=blue>│</>  الرصيد     : <options=bold>{$client->balance} ر.س</>  " . str_repeat(' ', max(0, 39 - mb_strlen($client->balance))) . "<fg=blue>│</>");
+            $this->command->line("  <fg=blue>│</>  كلمة المرور: <options=bold>123456</>  " . str_repeat(' ', 36) . "<fg=blue>│</>");
+            $this->command->line("  <fg=blue>│</>  الرابط     : <options=bold>/login</>  " . str_repeat(' ', 35) . "<fg=blue>│</>");
+        }
+        $this->command->line("  <fg=blue;options=bold>└{$line}┘</>");
+        $this->command->newLine();
+
+        $this->command->line("  <fg=gray>⚠️  غيّر كلمات المرور قبل النشر على الإنتاج!</>");
+        $this->command->newLine();
+    }
+
+    private function pad(string $text, int $width): string
+    {
+        $len     = mb_strlen($text);
+        $padding = max(0, $width - $len);
+        return ' ' . $text . str_repeat(' ', $padding);
+    }
+
+    private function center(string $text, int $width): string
+    {
+        $len    = mb_strlen($text);
+        $total  = max(0, $width - $len);
+        $left   = (int) floor($total / 2);
+        $right  = $total - $left;
+        return str_repeat(' ', $left) . $text . str_repeat(' ', $right);
     }
 }

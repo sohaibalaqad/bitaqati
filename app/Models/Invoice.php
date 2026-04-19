@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
-    protected $fillable = [
-        'user_id', 'package_id', 'card_id', 'amount', 'status',
-    ];
+    use BelongsToTenant;
+
+    protected $fillable = ['tenant_id', 'user_id', 'package_id', 'card_id', 'amount', 'status'];
 
     protected function casts(): array
     {

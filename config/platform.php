@@ -20,7 +20,7 @@ return [
     // =========================================================
 
     'name'    => env('PLATFORM_NAME', 'بطاقتي'),
-    'version' => env('PLATFORM_VERSION', '1.0.0'),
+    'version' => env('PLATFORM_VERSION', '2.0.0'),
 
     // =========================================================
     // Feature Flags
@@ -43,8 +43,8 @@ return [
         'multi_currency'    => env('FEATURE_MULTI_CURRENCY',  false),  // عملات متعددة لكل مستخدم
         'sms_notifications' => env('FEATURE_SMS',             false),  // إشعارات SMS
 
-        // ── v3.0 Features (future) ────────────────────────────
-        'multi_tenant'      => env('FEATURE_MULTI_TENANT',    false),  // مزودون متعددون (SaaS)
+        // ── v3.0 Features ────────────────────────────────────
+        'multi_tenant'      => env('FEATURE_MULTI_TENANT',    true),   // ✅ مفعّل في v2
         'api_access'        => env('FEATURE_API',             false),  // API عام للعملاء
         'white_label'       => env('FEATURE_WHITE_LABEL',     false),  // تخصيص كامل للعلامة
 
