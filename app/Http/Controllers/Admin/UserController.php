@@ -32,17 +32,18 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'required|string|unique:users,phone',
             'email' => 'nullable|email|unique:users,email',
-            'password' => 'required|min:4',
+            'password' => 'required|min:8',
         ]);
 
         User::create([
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'client',
-            'balance' => 0,
-            'status' => 'active',
+            'tenant_id' => auth()->user()->tenant_id, // explicit — never rely on trait alone
+            'name'      => $request->name,
+            'phone'     => $request->phone,
+            'email'     => $request->email,
+            'password'  => Hash::make($request->password),
+            'role'      => 'client',
+            'balance'   => 0,
+            'status'    => 'active',
         ]);
 
         return back()->with('success', 'تم إضافة المستخدم بنجاح');

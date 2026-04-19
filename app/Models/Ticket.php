@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class Ticket extends Model
 {
-    protected $fillable = [
-        'user_id', 'title', 'subject', 'category', 'description', 'priority', 'status',
-    ];
+    use BelongsToTenant;
+
+    protected $fillable = ['tenant_id', 'user_id', 'title', 'subject', 'category', 'description', 'priority', 'status'];
 
     public function user()
     {

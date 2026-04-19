@@ -39,8 +39,11 @@ class TicketController extends Controller {
             'is_admin'  => false,
         ]);
 
-        // Notify admin of new ticket
-        $admin = User::where('role', 'admin')->first();
+        // Notify the network admin of this tenant about the new ticket
+        $admin = User::where('role', 'network_admin')
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->first();
+
         if ($admin) {
             \App\Models\Notification::send(
                 $admin->id,

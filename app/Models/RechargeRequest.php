@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class RechargeRequest extends Model
 {
-    protected $fillable = [
-        'user_id', 'amount', 'note', 'status', 'reject_reason', 'handled_by',
-    ];
+    use BelongsToTenant;
+
+    protected $fillable = ['tenant_id', 'user_id', 'amount', 'note', 'status', 'reject_reason', 'handled_by'];
 
     protected function casts(): array
     {

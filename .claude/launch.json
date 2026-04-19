@@ -6,6 +6,12 @@
       "runtimeExecutable": "/opt/homebrew/bin/php",
       "runtimeArgs": ["artisan", "serve", "--port=8000"],
       "port": 8000
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "php -S localhost:${PORT:-8091} -t public/landing"],
+      "port": 8091
     }
   ]
 }

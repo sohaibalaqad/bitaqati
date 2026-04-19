@@ -1,19 +1,52 @@
 <?php
+
 namespace App\Models;
+
+use App\Models\Concerns\BelongsToTenant;
+use App\Services\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class Setting extends Model {
-    protected $fillable = ['key','value','group','label'];
+class Setting extends Model
+{
+    use BelongsToTenant;
 
-    public static function get(string $key, $default = null) {
-        return Cache::remember("setting_{$key}", 3600, function() use ($key, $default) {
-            return static::where('key', $key)->value('value') ?? $default;
+    protected $fillable = ['tenant_id', 'key', 'value', 'group', 'label'];
+
+    /**
+     * Get a setting value — scoped to the current tenant.
+     */
+    public static function get(string $key, $default = null): mixed
+    {
+        $tenantId = app(TenantContext::class)->id() ?? 0;
+        $cacheKey = "setting_{$tenantId}_{$key}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($key, $default, $tenantId) {
+            $query = static::withoutGlobalScopes()->where('key', $key);
+            if ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            } else {
+                // Super-admin context: only return platform-level settings (tenant_id IS NULL),
+                // never bleed a random tenant's setting into the super-admin panel.
+                $query->whereNull('tenant_id');
+            }
+            return $query->value('value') ?? $default;
         });
     }
 
-    public static function set(string $key, $value): void {
-        static::updateOrCreate(['key' => $key], ['value' => $value]);
-        Cache::forget("setting_{$key}");
+    /**
+     * Set a setting value — scoped to the current tenant.
+     */
+    public static function set(string $key, $value): void
+    {
+        $tenantId = app(TenantContext::class)->id();
+
+        static::withoutGlobalScopes()->updateOrCreate(
+            ['key' => $key, 'tenant_id' => $tenantId],
+            ['value' => $value, 'tenant_id' => $tenantId]
+        );
+
+        $tenantId = $tenantId ?? 0;
+        Cache::forget("setting_{$tenantId}_{$key}");
     }
 }
