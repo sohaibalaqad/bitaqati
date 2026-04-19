@@ -34,7 +34,7 @@ use App\Http\Controllers\SuperAdmin\HomepageController as SuperAdminHomepageCont
 Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
     Route::get('/login',  [SuperAdminAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [SuperAdminAuthController::class, 'login'])->name('login.submit')->middleware('throttle:5,1');
+    Route::post('/login', [SuperAdminAuthController::class, 'login'])->name('login.submit')->middleware('throttle:10,1');
     Route::post('/logout',[SuperAdminAuthController::class, 'logout'])->name('logout');
 
     Route::middleware('super_admin')->group(function () {
@@ -225,11 +225,13 @@ Route::middleware('tenant')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Public Homepage  —  registered LAST so it wins over client.dashboard for GET /
-| HomeController detects auth state and redirects authenticated users away.
+| Public Homepage — inside tenant middleware so ResolveTenant runs.
+| On the main domain the middleware passes through (no subdomain).
+| On an unknown subdomain it aborts 404 (branded error page shown).
+| HomeController redirects authenticated users to their dashboard.
 |--------------------------------------------------------------------------
 */
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::middleware('tenant')->get('/', [HomeController::class, 'index'])->name('home');
 
 /*
 |--------------------------------------------------------------------------

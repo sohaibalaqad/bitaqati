@@ -178,10 +178,52 @@
       <a href="#faq">الأسئلة</a>
     </div>
     <div class="navbar-actions">
-      <a href="{{ route('admin.login') }}" class="btn btn-outline" style="padding:9px 18px;font-size:14px">تسجيل الدخول</a>
+      <button onclick="document.getElementById('login-modal').style.display='flex'" class="btn btn-outline" style="padding:9px 18px;font-size:14px">تسجيل الدخول</button>
     </div>
   </div>
 </nav>
+
+{{-- ── Login Modal — asks for subdomain then redirects to tenant login ── --}}
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative">
+    <button onclick="document.getElementById('login-modal').style.display='none'" style="position:absolute;top:14px;left:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1">×</button>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:52px;height:52px;background:#eff6ff;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+        <svg width="24" height="24" fill="none" stroke="#0ea5e9" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:6px">تسجيل الدخول</h2>
+      <p style="font-size:14px;color:#64748b">أدخل رابط شبكتك للمتابعة</p>
+    </div>
+    <div style="display:flex;align-items:center;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden;transition:.2s" id="subdomain-wrap">
+      <input id="subdomain-input" type="text" placeholder="اسم-شبكتك"
+        style="flex:1;border:none;outline:none;padding:12px 14px;font-family:inherit;font-size:15px;direction:ltr;text-align:left;background:transparent"
+        oninput="this.value=this.value.replace(/[^a-z0-9\-]/g,'')"
+        onkeydown="if(event.key==='Enter')goToLogin()">
+      <span style="padding:12px 14px;color:#94a3b8;font-size:13px;white-space:nowrap;border-right:2px solid #e2e8f0;direction:ltr">.{{ config('app.domain','xnet-wifi.store') }}</span>
+    </div>
+    <p id="subdomain-error" style="color:#ef4444;font-size:13px;margin-top:8px;display:none">الرجاء إدخال رابط الشبكة</p>
+    <button onclick="goToLogin()" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;padding:14px">
+      الدخول إلى لوحة التحكم
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <p style="text-align:center;margin-top:16px;font-size:13px;color:#64748b">
+      شبكة جديدة؟ <a href="{{ route('register') }}" style="color:#0ea5e9;font-weight:700">سجّل مجاناً</a>
+    </p>
+  </div>
+</div>
+<script>
+function goToLogin() {
+  var sub = document.getElementById('subdomain-input').value.trim();
+  var err = document.getElementById('subdomain-error');
+  if (!sub) { err.style.display='block'; return; }
+  err.style.display='none';
+  var domain = '{{ config('app.domain','xnet-wifi.store') }}';
+  window.location.href = 'https://' + sub + '.' + domain + '/admin/login';
+}
+document.getElementById('login-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
 
 {{-- ── DYNAMIC SECTIONS ── --}}
 @foreach($sections as $section)
@@ -331,7 +373,7 @@
             @endforeach
           </div>
           @endif
-          <a href="{{ route('admin.login') }}" class="btn {{ $plan->is_popular ? 'btn-primary' : 'btn-outline' }}" style="width:100%;justify-content:center">
+          <a href="{{ route('register') }}" class="btn {{ $plan->is_popular ? 'btn-primary' : 'btn-outline' }}" style="width:100%;justify-content:center">
             ابدأ الآن
           </a>
         </div>
